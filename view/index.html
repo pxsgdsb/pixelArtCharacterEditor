@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素角色编辑器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .editor-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .canvas-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        #character-canvas {
+            border: 1px solid #ccc;
+            background-color: transparent;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .controls-panel {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            min-width: 300px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            color: #555;
+        }
+
+        .color-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .color-swatch {
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+        }
+
+        .color-swatch.selected {
+            border: 2px solid #000;
+        }
+
+        .item-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .item-option {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            text-align: center;
+            cursor: pointer;
+            background-color: #f9f9f9;
+        }
+
+        .item-option.selected {
+            background-color: #e0f0ff;
+            border-color: #0066cc;
+        }
+
+        .item-option img {
+            width: 100%;
+            height: auto;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>像素角色编辑器</h1>
+
+    <div class="editor-container">
+        <div class="canvas-container">
+            <canvas id="character-canvas" width="320" height="320"></canvas>
+        </div>
+
+        <div class="controls-panel">
+            <div class="control-group">
+                <h3>头发颜色</h3>
+                <div class="color-picker" id="hair-colors">
+                    <!-- 头发颜色选项将通过JavaScript动态添加 -->
+                    <input type="color" id="hair-color-picker" value="#000000">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>衣服样式</h3>
+                <div class="item-options" id="clothes-options">
+                    <!-- 衣服选项将通过JavaScript动态添加 -->
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>衣服颜色</h3>
+                <div class="color-picker" id="clothes-colors">
+                    <input type="color" id="clothes-color-picker" value="#0000FF">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>裤子样式</h3>
+                <div class="item-options" id="pants-options">
+                    <!-- 裤子选项将通过JavaScript动态添加 -->
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>裤子颜色</h3>
+                <div class="color-picker" id="pants-colors">
+                    <input type="color" id="pants-color-picker" value="#000000">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>配饰</h3>
+                <div class="item-options" id="accessories-options">
+                    <!-- 配饰选项将通过JavaScript动态添加 -->
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>表情</h3>
+                <div class="item-options" id="expressions-options">
+                    <!-- 表情选项将通过JavaScript动态添加 -->
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button id="random-btn">随机生成</button>
+                <button id="download-btn">下载角色</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 定义角色部件和颜色选项
+        const hairStyles = [
+            { id: 'hair1', name: '短发', pixels: [] },
+            { id: 'hair2', name: '长发', pixels: [] },
+            { id: 'hair3', name: '卷发', pixels: [] },
+            { id: 'hair4', name: '双马尾', pixels: [] },
+            { id: 'hair5', name: '波浪卷', pixels: [] },
+            { id: 'hair6', name: '蓬松短发', pixels: [] }
+        ];
+
+        const clothesStyles = [
+            { id: 'clothes1', name: 'T恤', pixels: [] },
+            { id: 'clothes2', name: '衬衫', pixels: [] },
+            { id: 'clothes3', name: '连衣裙', pixels: [] },
+            { id: 'clothes4', name: '夹克', pixels: [] },
+            { id: 'clothes5', name: '毛衣', pixels: [] },
+            { id: 'clothes6', name: '背带裤', pixels: [] }
+        ];
+
+        const accessories = [
+            { id: 'acc1', name: '眼镜', pixels: [] },
+            { id: 'acc2', name: '帽子', pixels: [] },
+            { id: 'acc3', name: '领结', pixels: [] },
+            { id: 'acc4', name: '发卡', pixels: [] }
+        ];
+
+        const expressions = [
+            { id: 'exp1', name: '开心', pixels: [] },
+            { id: 'exp2', name: '伤心', pixels: [] },
+            { id: 'exp3', name: '生气', pixels: [] },
+            { id: 'exp4', name: '惊讶', pixels: [] }
+        ];
+
+        const colorOptions = [
+            { id: 'black', hex: '#000000' },
+            { id: 'brown', hex: '#8B4513' },
+            { id: 'blonde', hex: '#FFD700' },
+            { id: 'red', hex: '#FF0000' },
+            { id: 'blue', hex: '#0000FF' },
+            { id: 'green', hex: '#008000' },
+            { id: 'purple', hex: '#800080' },
+            { id: 'pink', hex: '#FFC0CB' },
+            { id: 'white', hex: '#FFFFFF' },
+        ];
+
+        // 角色状态
+        // 裤子样式
+        const pantsStyles = [
+            { id: 'pants1', name: '牛仔裤', pixels: [] },
+            { id: 'pants2', name: '短裤', pixels: [] },
+            { id: 'pants3', name: '运动裤', pixels: [] },
+            { id: 'pants4', name: '西装裤', pixels: [] }
+        ];
+
+        const characterState = {
+            hairStyle: 'hair1',
+            hairColor: '#000000',
+            clothesStyle: 'clothes1',
+            clothesColor: '#0000FF',
+            pantsStyle: 'pants1',
+            pantsColor: '#000000',
+            accessory: 'none',
+            expression: 'exp1'
+        };
+
+        // 初始化函数
+        function init() {
+            // 初始化画布
+            const canvas = document.getElementById('character-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 创建基本像素数据（简化版，实际应用中应有更详细的像素数据）
+            initPixelData();
+
+            // 初始化UI元素
+            initUIElements();
+
+            // 初始渲染角色并启动动画
+            startAnimation();
+
+            // 添加事件监听器
+            document.getElementById('random-btn').addEventListener('click', randomizeCharacter);
+            document.getElementById('download-btn').addEventListener('click', downloadCharacter);
+        }
+
+        // 随机生成角色
+        function randomizeCharacter() {
+            // 随机选择发型
+            const randomHairStyle = hairStyles[Math.floor(Math.random() * hairStyles.length)].id;
+            characterState.hairStyle = randomHairStyle;
+            updateSelectionUI('hair-options', randomHairStyle);
+
+            // 随机选择发色
+            const randomHairColor = colorOptions[Math.floor(Math.random() * colorOptions.length)].hex;
+            characterState.hairColor = randomHairColor;
+            document.getElementById('hair-color-picker').value = randomHairColor;
+
+            // 随机选择衣服样式
+            const randomClothesStyle = clothesStyles[Math.floor(Math.random() * clothesStyles.length)].id;
+            characterState.clothesStyle = randomClothesStyle;
+            updateSelectionUI('clothes-options', randomClothesStyle);
+
+            // 随机选择衣服颜色
+            const randomClothesColor = colorOptions[Math.floor(Math.random() * colorOptions.length)].hex;
+            characterState.clothesColor = randomClothesColor;
+            document.getElementById('clothes-color-picker').value = randomClothesColor;
+            
+            // 随机选择裤子样式
+            const randomPantsStyle = pantsStyles[Math.floor(Math.random() * pantsStyles.length)].id;
+            characterState.pantsStyle = randomPantsStyle;
+            updateSelectionUI('pants-options', randomPantsStyle);
+            
+            // 随机选择裤子颜色
+            const randomPantsColor = colorOptions[Math.floor(Math.random() * colorOptions.length)].hex;
+            characterState.pantsColor = randomPantsColor;
+            document.getElementById('pants-color-picker').value = randomPantsColor;
+            
+            // 随机选择配饰
+            const randomAccessory = Math.random() > 0.3 ? accessories[Math.floor(Math.random() * accessories.length)].id : 'none';
+            characterState.accessory = randomAccessory;
+            if (randomAccessory !== 'none') {
+                updateSelectionUI('accessories-options', randomAccessory);
+            }
+            
+            // 随机选择表情
+            const randomExpression = expressions[Math.floor(Math.random() * expressions.length)].id;
+            characterState.expression = randomExpression;
+            updateSelectionUI('expressions-options', randomExpression);
+
+            // 重新渲染角色
+            renderCharacter();
+        }
+
+        // 下载角色
+        function downloadCharacter() {
+            const canvas = document.getElementById('character-canvas');
+
+            // 创建一个临时链接
+            const link = document.createElement('a');
+            link.download = 'pixel-character.png';
+
+            // 将canvas转换为图片URL
+            link.href = canvas.toDataURL('image/png');
+
+            // 模拟点击下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 初始化像素数据（简化版）
+        function initPixelData() {
+            // 头部基本形状（所有发型共用）
+            const baseHead = [
+                { x: 140, y: 120, w: 40, h: 50 } // 调整头部区域大小和位置
+            ];
+
+            // 手部定义
+            const hands = [
+                { x: 120, y: 180, w: 10, h: 10 }, // 左手
+                { x: 190, y: 180, w: 10, h: 10 }  // 右手
+            ];
+
+            // 脚部定义
+            const feet = [
+                { x: 140, y: 230, w: 15, h: 10 }, // 左脚
+                { x: 165, y: 230, w: 15, h: 10 }  // 右脚
+            ];
+
+            // 发型定义
+            hairStyles[0].pixels = [
+                { x: 135, y: 110, w: 50, h: 15 }, // 短发顶部
+                { x: 130, y: 115, w: 10, h: 25 }, // 短发左侧
+                { x: 180, y: 115, w: 10, h: 25 }, // 短发右侧
+                { x: 135, y: 115, w: 5, h: 20 }, // 左侧刘海
+                { x: 175, y: 115, w: 5, h: 20 }  // 右侧刘海
+            ];
+
+            hairStyles[1].pixels = [
+                { x: 135, y: 100, w: 50, h: 15 }, // 长发顶部
+                { x: 130, y: 105, w: 10, h: 80 }, // 长发左侧
+                { x: 180, y: 105, w: 10, h: 80 }, // 长发右侧
+                { x: 135, y: 105, w: 5, h: 25 }, // 左侧刘海
+                { x: 175, y: 105, w: 5, h: 25 }  // 右侧刘海
+            ];
+
+            hairStyles[2].pixels = [
+                { x: 130, y: 100, w: 60, h: 20 }, // 卷发顶部
+                { x: 125, y: 110, w: 15, h: 45 }, // 卷发左侧
+                { x: 180, y: 110, w: 15, h: 45 }, // 卷发右侧
+                { x: 135, y: 105, w: 8, h: 25 }, // 左侧卷曲
+                { x: 172, y: 105, w: 8, h: 25 }  // 右侧卷曲
+            ];
+
+            hairStyles[3].pixels = [
+                { x: 135, y: 100, w: 50, h: 15 }, // 双马尾顶部
+                { x: 120, y: 105, w: 15, h: 70 }, // 左马尾
+                { x: 185, y: 105, w: 15, h: 70 }, // 右马尾
+                { x: 135, y: 105, w: 5, h: 20 }, // 左侧刘海
+                { x: 175, y: 105, w: 5, h: 20 }  // 右侧刘海
+            ];
+
+            hairStyles[4].pixels = [
+                { x: 130, y: 100, w: 60, h: 20 }, // 波浪卷顶部
+                { x: 125, y: 110, w: 20, h: 60 }, // 波浪卷左侧
+                { x: 175, y: 110, w: 20, h: 60 }, // 波浪卷右侧
+                { x: 135, y: 105, w: 10, h: 30 }, // 左侧波浪
+                { x: 170, y: 105, w: 10, h: 30 }  // 右侧波浪
+            ];
+
+            hairStyles[5].pixels = [
+                { x: 130, y: 95, w: 60, h: 25 }, // 蓬松短发顶部
+                { x: 125, y: 105, w: 20, h: 35 }, // 蓬松短发左侧
+                { x: 175, y: 105, w: 20, h: 35 }, // 蓬松短发右侧
+                { x: 135, y: 100, w: 10, h: 25 }, // 左侧蓬松
+                { x: 170, y: 100, w: 10, h: 25 }  // 右侧蓬松
+            ];
+
+            // 衣服定义
+            clothesStyles[0].pixels = [
+                { x: 135, y: 170, w: 50, h: 50 }, // T恤主体
+                { x: 130, y: 170, w: 60, h: 15 }, // T恤领口
+                { x: 125, y: 170, w: 15, h: 30 }, // 左袖
+                { x: 180, y: 170, w: 15, h: 30 }  // 右袖
+            ];
+
+            clothesStyles[1].pixels = [
+                { x: 130, y: 170, w: 60, h: 60 }, // 衬衫主体
+                { x: 125, y: 170, w: 70, h: 20 }, // 衬衫领子
+                { x: 120, y: 170, w: 15, h: 40 }, // 左袖
+                { x: 185, y: 170, w: 15, h: 40 }  // 右袖
+            ];
+
+            clothesStyles[2].pixels = [
+                { x: 125, y: 170, w: 70, h: 80 }, // 连衣裙主体
+                { x: 120, y: 170, w: 80, h: 25 }, // 连衣裙上身
+                { x: 115, y: 170, w: 20, h: 45 }, // 左袖
+                { x: 185, y: 170, w: 20, h: 45 }  // 右袖
+            ];
+
+            clothesStyles[3].pixels = [
+                { x: 130, y: 170, w: 60, h: 55 }, // 夹克主体
+                { x: 125, y: 170, w: 70, h: 20 }, // 夹克领子
+                { x: 120, y: 170, w: 20, h: 35 }, // 左袖
+                { x: 180, y: 170, w: 20, h: 35 }  // 右袖
+            ];
+
+            clothesStyles[4].pixels = [
+                { x: 130, y: 170, w: 60, h: 50 }, // 毛衣主体
+                { x: 125, y: 170, w: 70, h: 15 }, // 毛衣领口
+                { x: 120, y: 170, w: 25, h: 35 }, // 左袖
+                { x: 175, y: 170, w: 25, h: 35 }  // 右袖
+            ];
+
+            clothesStyles[5].pixels = [
+                { x: 130, y: 170, w: 60, h: 70 }, // 背带裤主体
+                { x: 125, y: 170, w: 10, h: 60 }, // 左背带
+                { x: 185, y: 170, w: 10, h: 60 }, // 右背带
+                { x: 140, y: 220, w: 40, h: 20 }  // 裤腿
+            ];
+
+            // 配饰定义
+            accessories[0].pixels = [
+                { x: 148, y: 133, w: 24, h: 8 }, // 眼镜框
+                { x: 145, y: 135, w: 4, h: 4 }, // 左镜片
+                { x: 171, y: 135, w: 4, h: 4 }  // 右镜片
+            ];
+
+            accessories[1].pixels = [
+                { x: 130, y: 95, w: 60, h: 15 }, // 帽子主体
+                { x: 125, y: 105, w: 70, h: 5 }  // 帽檐
+            ];
+
+            accessories[2].pixels = [
+                { x: 155, y: 165, w: 10, h: 5 }, // 领结主体
+                { x: 152, y: 165, w: 4, h: 4 }, // 左蝴蝶结
+                { x: 164, y: 165, w: 4, h: 4 }  // 右蝴蝶结
+            ];
+
+            accessories[3].pixels = [
+                { x: 170, y: 110, w: 10, h: 5 }, // 发卡主体
+                { x: 168, y: 108, w: 4, h: 4 }, // 发卡装饰
+            ];
+
+            // 表情定义
+            expressions[0].pixels = [
+                { x: 150, y: 135, w: 4, h: 4 }, // 左眼
+                { x: 166, y: 135, w: 4, h: 4 }, // 右眼
+                { x: 155, y: 150, w: 10, h: 2 }  // 微笑
+            ];
+
+            expressions[1].pixels = [
+                { x: 150, y: 135, w: 4, h: 4 }, // 左眼
+                { x: 166, y: 135, w: 4, h: 4 }, // 右眼
+                { x: 155, y: 155, w: 10, h: 2 }  // 伤心
+            ];
+
+            expressions[2].pixels = [
+                { x: 150, y: 135, w: 4, h: 4 }, // 左眼
+                { x: 166, y: 135, w: 4, h: 4 }, // 右眼
+                { x: 155, y: 150, w: 10, h: 2 }, // 生气嘴
+                { x: 148, y: 130, w: 8, h: 2 }, // 左眉
+                { x: 164, y: 130, w: 8, h: 2 }  // 右眉
+            ];
+
+            expressions[3].pixels = [
+                { x: 150, y: 135, w: 4, h: 6 }, // 左眼
+                { x: 166, y: 135, w: 4, h: 6 }, // 右眼
+                { x: 155, y: 152, w: 10, h: 4 }  // 惊讶嘴
+            ];
+
+            // 裤子定义
+            pantsStyles[0].pixels = [
+                { x: 140, y: 230, w: 15, h: 50 }, // 左腿
+                { x: 165, y: 230, w: 15, h: 50 }  // 右腿
+            ];
+
+            pantsStyles[1].pixels = [
+                { x: 140, y: 230, w: 15, h: 25 }, // 左腿
+                { x: 165, y: 230, w: 15, h: 25 }  // 右腿
+            ];
+
+            pantsStyles[2].pixels = [
+                { x: 138, y: 230, w: 19, h: 45 }, // 左腿
+                { x: 163, y: 230, w: 19, h: 45 }  // 右腿
+            ];
+
+            pantsStyles[3].pixels = [
+                { x: 140, y: 230, w: 15, h: 55 }, // 左腿
+                { x: 165, y: 230, w: 15, h: 55 }  // 右腿
+            ];
+
+            // 将手和脚添加到全局变量
+            window.characterParts = {
+                hands: hands,
+                feet: feet
+            };
+        }
+
+        // 初始化UI元素
+        function initUIElements() {
+            // 添加发型选项
+            const hairOptionsContainer = document.createElement('div');
+            hairOptionsContainer.className = 'item-options';
+            hairOptionsContainer.id = 'hair-options';
+            document.querySelector('.control-group').appendChild(hairOptionsContainer);
+
+            hairStyles.forEach(style => {
+                const option = document.createElement('div');
+                option.className = 'item-option';
+                option.dataset.id = style.id;
+                option.textContent = style.name;
+                if (style.id === characterState.hairStyle) {
+                    option.classList.add('selected');
+                }
+                option.addEventListener('click', () => selectHairStyle(style.id));
+                hairOptionsContainer.appendChild(option);
+            });
+
+            // 添加发色选项
+            const hairColorsContainer = document.getElementById('hair-colors');
+            colorOptions.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color.hex;
+                swatch.dataset.color = color.hex;
+                if (color.hex === characterState.hairColor) {
+                    swatch.classList.add('selected');
+                }
+                swatch.addEventListener('click', () => {
+                    characterState.hairColor = color.hex;
+                    hairColorsContainer.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                    swatch.classList.add('selected');
+                    renderCharacter();
+                });
+                hairColorsContainer.appendChild(swatch);
+            });
+            
+            // 添加自定义头发颜色选择器事件
+            document.getElementById('hair-color-picker').addEventListener('input', (e) => {
+                characterState.hairColor = e.target.value;
+                renderCharacter();
+            });
+
+            // 添加配饰选项
+            const accessoriesContainer = document.getElementById('accessories-options');
+            accessories.forEach(acc => {
+                const option = document.createElement('div');
+                option.className = 'item-option';
+                option.dataset.id = acc.id;
+                option.textContent = acc.name;
+                if (acc.id === characterState.accessory) {
+                    option.classList.add('selected');
+                }
+                option.addEventListener('click', () => {
+                    characterState.accessory = acc.id;
+                    accessoriesContainer.querySelectorAll('.item-option').forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    renderCharacter();
+                });
+                accessoriesContainer.appendChild(option);
+            });
+
+            // 添加表情选项
+            const expressionsContainer = document.getElementById('expressions-options');
+            expressions.forEach(exp => {
+                const option = document.createElement('div');
+                option.className = 'item-option';
+                option.dataset.id = exp.id;
+                option.textContent = exp.name;
+                if (exp.id === characterState.expression) {
+                    option.classList.add('selected');
+                }
+                option.addEventListener('click', () => {
+                    characterState.expression = exp.id;
+                    expressionsContainer.querySelectorAll('.item-option').forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    renderCharacter();
+                });
+                expressionsContainer.appendChild(option);
+            });
+
+            // 初始化渲染函数
+            window.renderCharacter = function() {
+                const canvas = document.getElementById('character-canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 绘制基本形状
+                ctx.fillStyle = '#FFE0BD'; // 皮肤颜色
+                ctx.fillRect(140, 120, 40, 50); // 头部
+                ctx.fillRect(135, 170, 50, 60); // 躯干
+                ctx.fillRect(120, 180, 10, 40); // 左手臂
+                ctx.fillRect(190, 180, 10, 40); // 右手臂
+                ctx.fillRect(140, 230, 15, 50); // 左腿
+                ctx.fillRect(165, 230, 15, 50); // 右腿
+
+                // 绘制当前发型
+                const currentHairStyle = hairStyles.find(style => style.id === characterState.hairStyle);
+                if (currentHairStyle) {
+                    ctx.fillStyle = characterState.hairColor;
+                    currentHairStyle.pixels.forEach(pixel => {
+                        ctx.fillRect(pixel.x, pixel.y, pixel.w, pixel.h);
+                    });
+                }
+
+                // 绘制当前裤子
+                const currentPants = pantsStyles.find(style => style.id === characterState.pantsStyle);
+                if (currentPants) {
+                    ctx.fillStyle = characterState.pantsColor;
+                    currentPants.pixels.forEach(pixel => {
+                        ctx.fillRect(pixel.x, pixel.y, pixel.w, pixel.h);
+                    });
+                }
+
+                // 绘制当前衣服
+                const currentClothes = clothesStyles.find(style => style.id === characterState.clothesStyle);
+                if (currentClothes) {
+                    ctx.fillStyle = characterState.clothesColor;
+                    currentClothes.pixels.forEach(pixel => {
+                        ctx.fillRect(pixel.x, pixel.y, pixel.w, pixel.h);
+                    });
+                }
+
+                // 绘制当前配饰
+                if (characterState.accessory !== 'none') {
+                    const currentAccessory = accessories.find(acc => acc.id === characterState.accessory);
+                    if (currentAccessory) {
+                        ctx.fillStyle = '#000000';
+                        currentAccessory.pixels.forEach(pixel => {
+                            ctx.fillRect(pixel.x, pixel.y, pixel.w, pixel.h);
+                        });
+                    }
+                }
+
+                // 绘制当前表情
+                const currentExpression = expressions.find(exp => exp.id === characterState.expression);
+                if (currentExpression) {
+                    ctx.fillStyle = '#000000';
+                    currentExpression.pixels.forEach(pixel => {
+                        ctx.fillRect(pixel.x, pixel.y, pixel.w, pixel.h);
+                    });
+                }
+            };
+
+            // 添加衣服选项
+            const clothesOptionsContainer = document.getElementById('clothes-options');
+            clothesStyles.forEach(style => {
+                const option = document.createElement('div');
+                option.className = 'item-option';
+                option.dataset.id = style.id;
+                option.textContent = style.name;
+                if (style.id === characterState.clothesStyle) {
+                    option.classList.add('selected');
+                }
+                option.addEventListener('click', () => {
+                    characterState.clothesStyle = style.id;
+                    clothesOptionsContainer.querySelectorAll('.item-option').forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    renderCharacter();
+                });
+                clothesOptionsContainer.appendChild(option);
+            });
+
+            // 添加衣服颜色选项
+            const clothesColorsContainer = document.getElementById('clothes-colors');
+            colorOptions.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.dataset.id = color.id;
+                swatch.style.backgroundColor = color.hex;
+                if (color.id === characterState.clothesColor) {
+                    swatch.classList.add('selected');
+                }
+                swatch.addEventListener('click', () => {
+                    characterState.clothesColor = color.hex;
+                    clothesColorsContainer.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                    swatch.classList.add('selected');
+                    renderCharacter();
+                });
+                clothesColorsContainer.appendChild(swatch);
+            });
+            
+            // 添加自定义衣服颜色选择器事件
+            document.getElementById('clothes-color-picker').addEventListener('input', (e) => {
+                characterState.clothesColor = e.target.value;
+                renderCharacter();
+            });
+
+            // 添加裤子选项
+            const pantsOptionsContainer = document.getElementById('pants-options');
+            pantsStyles.forEach(style => {
+                const option = document.createElement('div');
+                option.className = 'item-option';
+                option.dataset.id = style.id;
+                option.textContent = style.name;
+                if (style.id === characterState.pantsStyle) {
+                    option.classList.add('selected');
+                }
+                option.addEventListener('click', () => {
+                    characterState.pantsStyle = style.id;
+                    pantsOptionsContainer.querySelectorAll('.item-option').forEach(opt => opt.classList.remove('selected'));
+                    option.classList.add('selected');
+                    renderCharacter();
+                });
+                pantsOptionsContainer.appendChild(option);
+            });
+
+            // 添加裤子颜色选项
+            const pantsColorsContainer = document.getElementById('pants-colors');
+            colorOptions.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.dataset.id = color.id;
+                swatch.style.backgroundColor = color.hex;
+                if (color.id === characterState.pantsColor) {
+                    swatch.classList.add('selected');
+                }
+                swatch.addEventListener('click', () => {
+                    characterState.pantsColor = color.hex;
+                    pantsColorsContainer.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                    swatch.classList.add('selected');
+                    renderCharacter();
+                });
+                pantsColorsContainer.appendChild(swatch);
+            });
+            
+            // 添加自定义裤子颜色选择器事件
+            document.getElementById('pants-color-picker').addEventListener('input', (e) => {
+                characterState.pantsColor = e.target.value;
+                renderCharacter();
+            });
+        }
+
+        // 选择发型
+        function selectHairStyle(styleId) {
+            characterState.hairStyle = styleId;
+            updateSelectionUI('hair-options', styleId);
+            renderCharacter();
+        }
+
+        // 选择发色
+        function selectHairColor(colorId) {
+            characterState.hairColor = colorId;
+            updateSelectionUI('hair-colors', colorId);
+            renderCharacter();
+        }
+        // 选择衣服样式
+        function selectClothesStyle(styleId) {
+            characterState.clothesStyle = styleId;
+            updateSelectionUI('clothes-options', styleId);
+            renderCharacter();
+        }
+        // 选择衣服颜色
+        function selectClothesColor(colorId) {
+            characterState.clothesColor = colorId;
+            updateSelectionUI('clothes-colors', colorId);
+            renderCharacter();
+        }
+
+        // 选择裤子样式
+        function selectPantsStyle(styleId) {
+            characterState.pantsStyle = styleId;
+            updateSelectionUI('pants-options', styleId);
+            renderCharacter();
+        }
+
+        // 选择裤子颜色
+        function selectPantsColor(colorId) {
+            characterState.pantsColor = colorId;
+            updateSelectionUI('pants-colors', colorId);
+            renderCharacter();
+        }
+
+        // 选择配饰
+        function selectAccessory(accessoryId) {
+            characterState.accessory = accessoryId;
+            updateSelectionUI('accessories-options', accessoryId);
+            renderCharacter();
+        }
+
+        // 选择表情
+        function selectExpression(expressionId) {
+            characterState.expression = expressionId;
+            updateSelectionUI('expressions-options', expressionId);
+            renderCharacter();
+        }
+
+        // 更新UI选择状态
+        function updateSelectionUI(containerId, selectedId) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.querySelectorAll('.item-option').forEach(option => {
+                    if (option.dataset.id === selectedId) {
+                        option.classList.add('selected');
+                    } else {
+                        option.classList.remove('selected');
+                    }
+                });
+            }
+        }
+        // 启动动画函数（不再需要重复定义renderCharacter）
+        function startAnimation() {
+            renderCharacter();
+            // 不需要持续动画，只在状态改变时重新渲染
+            // requestAnimationFrame(startAnimation);
+        }
+
+        // 启动动画
+        function startAnimation() {
+            renderCharacter();
+            // 不需要持续动画，只在状态改变时重新渲染
+            // requestAnimationFrame(startAnimation);
+        }
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
