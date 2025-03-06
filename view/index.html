@@ -8,31 +8,37 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f0f0f0;
+            background-color: #f5f7fa;
             margin: 0;
-            padding: 20px;
+            /* padding: 20px; */
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
+            min-height: 100vh;
         }
 
         .editor-container {
             display: flex;
-            gap: 20px;
+            gap: 30px;
             max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            /* border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); */
+            backdrop-filter: blur(8px);
         }
 
         .canvas-container {
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             padding: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .canvas-container:hover {
+            transform: translateY(-2px);
         }
 
         #character-canvas {
@@ -44,10 +50,11 @@
 
         .controls-panel {
             background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
             padding: 20px;
-            min-width: 300px;
+            min-width: 320px;
+            transition: all 0.3s ease;
         }
 
         .control-group {
@@ -56,9 +63,12 @@
 
         .control-group h3 {
             margin-top: 0;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 8px;
-            color: #555;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 12px;
+            color: #2c3e50;
+            font-size: 1.1em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         .color-picker {
@@ -69,8 +79,8 @@
         }
 
         .color-swatch {
-            width: 25px;
-            height: 25px;
+            width: 22px;
+            height: 22px;
             border-radius: 4px;
             cursor: pointer;
             border: 1px solid #ddd;
@@ -88,17 +98,28 @@
         }
 
         .item-option {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 5px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px;
             text-align: center;
             cursor: pointer;
-            background-color: #f9f9f9;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+            font-size: 0.95em;
+            color: #4a5568;
+        }
+
+        .item-option:hover {
+            background-color: #f8fafc;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .item-option.selected {
-            background-color: #e0f0ff;
-            border-color: #0066cc;
+            background-color: #ebf8ff;
+            border-color: #3182ce;
+            color: #2b6cb0;
+            box-shadow: 0 2px 8px rgba(49, 130, 206, 0.1);
         }
 
         .item-option img {
@@ -109,21 +130,32 @@
         }
 
         button {
-            background-color: #4CAF50;
+            background-color: #4299e1;
             color: white;
             border: none;
-            padding: 10px 15px;
+            padding: 10px 20px;
             text-align: center;
             text-decoration: none;
             display: inline-block;
-            font-size: 16px;
+            font-size: 15px;
             margin: 4px 2px;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 8px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
         }
 
         button:hover {
-            background-color: #45a049;
+            background-color: #3182ce;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
         }
 
         .action-buttons {
@@ -135,19 +167,31 @@
 </head>
 
 <body>
-    <h1>像素角色编辑器</h1>
-
     <div class="editor-container">
         <div class="canvas-container">
             <canvas id="character-canvas" width="320" height="320"></canvas>
+
+            <div class="control-group" style="margin-top: 15px;">
+                <h3>配饰</h3>
+                <div class="item-options" id="accessories-options">
+                    <!-- 配饰选项将通过JavaScript动态添加 -->
+                </div>
+            </div>
+
+            <div class="control-group">
+                <h3>表情</h3>
+                <div class="item-options" id="expressions-options">
+                    <!-- 表情选项将通过JavaScript动态添加 -->
+                </div>
+            </div>
         </div>
 
         <div class="controls-panel">
-            <div class="control-group">
-                <h3>头发颜色</h3>
+            <div class="control-group hairStyleBox">
+                <h3>头发样式</h3>
                 <div class="color-picker" id="hair-colors">
                     <!-- 头发颜色选项将通过JavaScript动态添加 -->
-                    <input type="color" id="hair-color-picker" value="#000000">
+                    <input type="color" style="height: 24px;padding: 0;" id="hair-color-picker" value="#000000">
                 </div>
             </div>
 
@@ -161,7 +205,7 @@
             <div class="control-group">
                 <h3>衣服颜色</h3>
                 <div class="color-picker" id="clothes-colors">
-                    <input type="color" id="clothes-color-picker" value="#0000FF">
+                    <input type="color" style="height: 24px;padding: 0;" id="clothes-color-picker" value="#0000FF">
                 </div>
             </div>
 
@@ -175,23 +219,11 @@
             <div class="control-group">
                 <h3>裤子颜色</h3>
                 <div class="color-picker" id="pants-colors">
-                    <input type="color" id="pants-color-picker" value="#000000">
+                    <input type="color" style="height: 24px;padding: 0;" id="pants-color-picker" value="#000000">
                 </div>
             </div>
 
-            <div class="control-group">
-                <h3>配饰</h3>
-                <div class="item-options" id="accessories-options">
-                    <!-- 配饰选项将通过JavaScript动态添加 -->
-                </div>
-            </div>
-
-            <div class="control-group">
-                <h3>表情</h3>
-                <div class="item-options" id="expressions-options">
-                    <!-- 表情选项将通过JavaScript动态添加 -->
-                </div>
-            </div>
+           
 
             <div class="action-buttons">
                 <button id="random-btn">随机生成</button>
@@ -546,7 +578,7 @@
             const hairOptionsContainer = document.createElement('div');
             hairOptionsContainer.className = 'item-options';
             hairOptionsContainer.id = 'hair-options';
-            document.querySelector('.control-group').appendChild(hairOptionsContainer);
+            document.querySelector('.hairStyleBox').appendChild(hairOptionsContainer);
 
             hairStyles.forEach(style => {
                 const option = document.createElement('div');
